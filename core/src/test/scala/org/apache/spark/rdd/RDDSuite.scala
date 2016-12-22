@@ -1106,6 +1106,18 @@ class RDDSuite extends SparkFunSuite with SharedSparkContext {
     assertFails { sc.parallelize(1 to 100) }
     assertFails { sc.textFile("/nonexistent-path") }
   }
+
+  test("flatten") {
+    val nestedNums = sc.makeRDD(Array(Array(1, 2, 3), Array(4, 5), Array(6)), 2)
+    assert(nestedNums.flatten.collect().toList === List(1, 2, 3, 4, 5, 6))
+  }
+
+  /**
+  test("fltten") {
+    val nestedNums = sc.makeRDD(Array(Array(1,2,3), Array(4,5), Array(6)), 2)
+    assert(nestedNums.fltten.collect().toList === List(1,2,3,4,5,6))
+  }
+  */
 }
 
 /**
