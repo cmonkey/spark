@@ -381,6 +381,42 @@ abstract class RDD[T: ClassTag](
   }
 
   /**
+  def flatten[U: ClassTag](): RDD[U] = withScope{
+    new MapPartitionsRDD[U,T] (this, (context, pid, iter) => iter.flatten)
+  }
+
+  def flatten[U: ClassTag](): RDD[U] = withScope{
+    new MapPartitionsRDD[U, T] (this, (context, pid, iter) => iter.flatMap((x => x)))
+  }
+
+  def flatten[B](implicit asTraversable: A => GenTraversableOnce[B]): CC[B] = {
+    val b = genericBuilder[B]
+    for (xs <- sequential)
+      b ++= asTraversable(xs).seq
+
+    b.result()
+  }
+  */
+
+  def flatten[U: ClassTag](implicit asTraversable: T => TraversableOnce[U]): RDD[U] = withScope{
+    val f = (x: T) => asTraversable(x)
+    val cleanF = sc.clean(f)
+    logInfo("flatten cleanF = " + cleanF)
+    new MapPartitionsRDD[U, T](this, (context, pid, iter) => iter.flatMap(cleanF))
+  }
+
+  /**
+  def fltten[U: ClassTag](implicit asTraversable: T => TraversableOnce[U]): RDD[U] = withScope {
+    new MapPartitionsRDD[U, T](this, (context, pid, iter) => {
+      var newIter: Iterator[U] = Iterator.empty
+      for (x <- iter) newIter ++= asTraversable(x)
+      newIter
+    })
+  }
+  */
+
+
+  /**
    * Return a new RDD containing only the elements that satisfy a predicate.
    */
   def filter(f: T => Boolean): RDD[T] = withScope {
